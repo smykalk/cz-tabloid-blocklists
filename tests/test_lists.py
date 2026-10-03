@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Unit tests for the Czech blocklists."""
+"""Unit tests for the Czech blocklists.
+
+Repository-wide formatting, ordering and generated-file checks live in
+``scripts/validate.py`` and are exercised by ``TestValidatorScript``; the
+tests below pin the list contents and the user-facing guarantees on top.
+"""
 
 import contextlib
 import io
@@ -202,166 +207,6 @@ def run_validator(directory, *extra_arguments):
     return exit_code, stderr.getvalue(), stdout.getvalue()
 
 
-class TestCanonicalTxtFiles(unittest.TestCase):
-    """Formatting, ordering and encoding of the canonical domain lists."""
-
-    def test_files_exist_and_are_not_empty(self):
-        for path in TXT_PATHS:
-            with self.subTest(path=path.name):
-                self.assertTrue(path.is_file(), f"{path} is missing")
-                self.assertTrue(path.stat().st_size > 0)
-
-    def test_files_are_valid_utf8_without_bom_and_use_lf(self):
-        for path in TXT_PATHS:
-            with self.subTest(path=path.name):
-                raw = path.read_bytes()
-                self.assertFalse(raw.startswith(b"\xef\xbb\xbf"), "unexpected BOM")
-                raw.decode("utf-8")  # raises on invalid UTF-8
-                self.assertNotIn(b"\r", raw, "use LF line endings only")
-
-    def test_files_end_with_a_newline(self):
-        for path in TXT_PATHS:
-            with self.subTest(path=path.name):
-                self.assertTrue(path.read_bytes().endswith(b"\n"))
-
-    def test_lines_are_plain_hostnames_without_comments(self):
-        for path in TXT_PATHS:
-            with self.subTest(path=path.name):
-                for number, line in enumerate(read_lines(path), start=1):
-                    if not line:
-                        continue
-                    self.assertEqual(line, line.strip(), f"{path.name}:{number}")
-                    self.assertFalse(
-                        line.startswith("#") or line.startswith(";"),
-                        f"{path.name}:{number}: comments are not supported",
-                    )
-
-    def test_entries_are_valid_hostnames(self):
-        for path in TXT_PATHS:
-            for number, line in enumerate(read_lines(path), start=1):
-                if not line:
-                    continue
-                with self.subTest(path=path.name, line=number):
-                    hostname, error = validator.parse_hostname_line(line)
-                    self.assertIsNone(error, f"{path.name}:{number}: {error}")
-                    self.assertEqual(hostname, line)
-
-    def test_entries_have_no_schemes_paths_or_wildcards(self):
-        for path in TXT_PATHS:
-            for number, line in enumerate(read_lines(path), start=1):
-                if not line:
-                    continue
-                with self.subTest(path=path.name, line=number):
-                    self.assertNotIn("://", line)
-                    self.assertNotIn("/", line)
-                    for character in "*?[]{}()^$|\\":
-                        self.assertNotIn(character, line)
-
-    def test_entries_are_unique_and_sorted(self):
-        for path in TXT_PATHS:
-            with self.subTest(path=path.name):
-                hostnames = read_hostnames(self, path)
-                self.assertEqual(
-                    len(hostnames),
-                    len(set(hostnames)),
-                    f"{path.name} contains duplicates",
-                )
-                self.assertEqual(
-                    hostnames, sorted(hostnames), f"{path.name} is not sorted"
-                )
-
-    def test_every_site_has_its_www_hostname(self):
-        for path in TXT_PATHS:
-            hostnames = set(read_hostnames(self, path))
-            for hostname in sorted(hostnames):
-                counterpart = (
-                    hostname[len("www.") :]
-                    if hostname.startswith("www.")
-                    else "www." + hostname
-                )
-                with self.subTest(path=path.name, hostname=hostname):
-                    self.assertIn(counterpart, hostnames)
-
-    def test_no_entry_is_a_protected_domain(self):
-        for path in TXT_PATHS:
-            for hostname in read_hostnames(self, path):
-                with self.subTest(path=path.name, hostname=hostname):
-                    self.assertNotIn(hostname, validator.PROTECTED_DOMAINS)
-
-
-class TestGeneratedFiles(unittest.TestCase):
-    """The hosts and ABP files are generated from the canonical lists."""
-
-    def test_files_exist_and_are_not_empty(self):
-        for path in GENERATED_PATHS:
-            with self.subTest(path=path.name):
-                self.assertTrue(path.is_file(), f"{path} is missing")
-                self.assertTrue(path.stat().st_size > 0)
-
-    def test_files_are_valid_utf8_without_bom_and_use_lf(self):
-        for path in GENERATED_PATHS:
-            with self.subTest(path=path.name):
-                raw = path.read_bytes()
-                self.assertFalse(raw.startswith(b"\xef\xbb\xbf"), "unexpected BOM")
-                raw.decode("utf-8")  # raises on invalid UTF-8
-                self.assertNotIn(b"\r", raw, "use LF line endings only")
-
-    def test_files_end_with_a_newline(self):
-        for path in GENERATED_PATHS:
-            with self.subTest(path=path.name):
-                self.assertTrue(path.read_bytes().endswith(b"\n"))
-
-    def test_hosts_files_match_the_txt_lists(self):
-        self.assertEqual(
-            read_generated(self, BASIC_HOSTS_PATH), read_hostnames(self, BASIC_TXT_PATH)
-        )
-        self.assertEqual(
-            read_generated(self, AGGRESSIVE_HOSTS_PATH),
-            read_hostnames(self, AGGRESSIVE_TXT_PATH),
-        )
-
-    def test_abp_files_match_the_txt_lists(self):
-        self.assertEqual(
-            read_generated(self, BASIC_ABP_PATH), read_hostnames(self, BASIC_TXT_PATH)
-        )
-        self.assertEqual(
-            read_generated(self, AGGRESSIVE_ABP_PATH),
-            read_hostnames(self, AGGRESSIVE_TXT_PATH),
-        )
-
-    def test_entries_are_unique_and_sorted(self):
-        for path in GENERATED_PATHS:
-            hostnames = read_generated(self, path)
-            with self.subTest(path=path.name):
-                self.assertEqual(
-                    len(hostnames),
-                    len(set(hostnames)),
-                    f"{path.name} contains duplicates",
-                )
-                self.assertEqual(
-                    hostnames, sorted(hostnames), f"{path.name} is not sorted"
-                )
-
-    def test_files_are_exactly_rendered_from_the_txt_lists(self):
-        pairs = (
-            (BASIC_TXT_PATH, BASIC_HOSTS_PATH),
-            (AGGRESSIVE_TXT_PATH, AGGRESSIVE_HOSTS_PATH),
-            (BASIC_TXT_PATH, BASIC_ABP_PATH),
-            (AGGRESSIVE_TXT_PATH, AGGRESSIVE_ABP_PATH),
-        )
-        for txt_path, generated in pairs:
-            formatter = (
-                validator.format_hosts_entry
-                if generated.suffix == ".hosts"
-                else validator.format_abp_entry
-            )
-            with self.subTest(generated=generated.name):
-                self.assertEqual(
-                    generated.read_text(encoding="utf-8"),
-                    validator.render_list(read_hostnames(self, txt_path), formatter),
-                )
-
-
 class TestBasicList(unittest.TestCase):
     def test_txt_hostnames_match_the_expected_set(self):
         self.assertEqual(
@@ -373,12 +218,6 @@ class TestBasicList(unittest.TestCase):
         expected = expected_hostnames(EXPECTED_BASIC)
         self.assertEqual(read_generated(self, BASIC_HOSTS_PATH), expected)
         self.assertEqual(read_generated(self, BASIC_ABP_PATH), expected)
-
-    def test_expected_hostnames_are_present(self):
-        hostnames = set(read_hostnames(self, BASIC_TXT_PATH))
-        for hostname in ("super.cz", "www.super.cz", "zena.aktualne.cz"):
-            with self.subTest(hostname=hostname):
-                self.assertIn(hostname, hostnames)
 
 
 class TestAggressiveList(unittest.TestCase):
@@ -400,20 +239,6 @@ class TestAggressiveList(unittest.TestCase):
             basic.issubset(aggressive),
             f"missing from aggressive.txt: {sorted(basic - aggressive)}",
         )
-
-    def test_generated_formats_are_supersets_of_basic(self):
-        for basic_path, aggressive_path in (
-            (BASIC_HOSTS_PATH, AGGRESSIVE_HOSTS_PATH),
-            (BASIC_ABP_PATH, AGGRESSIVE_ABP_PATH),
-        ):
-            basic = set(read_generated(self, basic_path))
-            aggressive = set(read_generated(self, aggressive_path))
-            with self.subTest(format=basic_path.suffix):
-                self.assertTrue(
-                    basic.issubset(aggressive),
-                    "missing from "
-                    f"{aggressive_path.name}: {sorted(basic - aggressive)}",
-                )
 
 
 class TestDedicatedSubdomainHandling(unittest.TestCase):

@@ -17,7 +17,3 @@ indent_size = 2
 # Trailing double spaces are meaningful in Markdown.
 [*.md]
 trim_trailing_whitespace = false
-
-# Blocklists: plain text, one entry per line, no indentation at all.
-[*.{txt,hosts,abp}]
-insert_final_newline = true
