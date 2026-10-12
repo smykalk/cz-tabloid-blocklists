@@ -43,9 +43,14 @@ EXPECTED_BASIC = [
     "expres.cz",
     "extra.cz",
     "nasehvezdy.cz",
+    "sedmicka.tyden.cz",
+    "sip.denik.cz",
     "stars24.cz",
     "super.cz",
     "vipshow.cz",
+    "vipstar.cz",
+    "vipzivot.cz",
+    "vlasta.cz",
     "zena.aktualne.cz",
 ]
 
@@ -55,6 +60,7 @@ EXPECTED_AGGRESSIVE = EXPECTED_BASIC + [
     "elle.cz",
     "extralife.cz",
     "extrasimo.cz",
+    "fajnstyl.cz",
     "fajntip.cz",
     "femina.cz",
     "iglanc.cz",
@@ -71,9 +77,13 @@ EXPECTED_AGGRESSIVE = EXPECTED_BASIC + [
     "onlyu.cz",
     "predminutou.cz",
     "prozeny.cz",
+    "readzone.cz",
+    "showbiz.cz",
+    "svetzeny.cz",
     "tojesenzace.cz",
+    "tvguru.cz",
+    "udalosti247.cz",
     "viposobnosti.cz",
-    "vlasta.cz",
     "zadnyspeky.cz",
     "zena-in.cz",
     "zeny.cz",
@@ -83,10 +93,12 @@ EXPECTED_AGGRESSIVE = EXPECTED_BASIC + [
 # blocked (for example zena.aktualne.cz).
 MAINSTREAM_PARENTS = (
     "aktualne.cz",
+    "denik.cz",
     "idnes.cz",
     "iprima.cz",
     "nova.cz",
     "seznam.cz",
+    "tyden.cz",
 )
 
 # Domains that must never appear in any list, in any format.

@@ -3,8 +3,8 @@
 Blocklists that block Czech tabloid, celebrity-gossip, clickbait and low-value
 lifestyle websites on your network.
 
-- **Basic** (10 sites) — conservative
-- **Aggressive** (37 sites) — superset of Basic; subscribe to only one
+- **Basic** (15 sites) — conservative
+- **Aggressive** (47 sites) — superset of Basic; subscribe to only one
 
 Each list ships in three formats, generated from the same domain list:
 
